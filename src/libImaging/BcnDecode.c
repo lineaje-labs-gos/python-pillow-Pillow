@@ -453,6 +453,10 @@ decode_bc7_block(rgba *col, const UINT8 *src) {
 #undef LOAD
     cibit = bit;
     aibit = cibit + 16 * info->ib - info->ns;
+#if defined(_MSC_VER) && _MSC_VER >= 1952 && defined(_M_X64)
+    /* MSVC 19.52 x64 miscompiles this loop for two-subset modes */
+#pragma loop(no_vector)
+#endif
     for (i = 0; i < 16; i++) {
         s = bc7_get_subset(info->ns, partition, i) << 1;
         ib = info->ib;
