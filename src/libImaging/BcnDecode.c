@@ -337,6 +337,11 @@ bc7_lerp(rgba *dst, const rgba *e, int s0, int s1) {
     dst->a = (UINT8)((t1 * e[0].a + s1 * e[1].a + 32) >> 6);
 }
 
+#if defined(_MSC_VER) && _MSC_VER >= 1952 && defined(_M_X64)
+/* MSVC 19.52 x64 miscompiles this function for two-subset modes */
+#define BC7_NO_OPTIMIZE
+#pragma optimize("", off)
+#endif
 static void
 decode_bc7_block(rgba *col, const UINT8 *src) {
     rgba endpoints[6];
@@ -453,10 +458,6 @@ decode_bc7_block(rgba *col, const UINT8 *src) {
 #undef LOAD
     cibit = bit;
     aibit = cibit + 16 * info->ib - info->ns;
-#if defined(_MSC_VER) && _MSC_VER >= 1952 && defined(_M_X64)
-    /* MSVC 19.52 x64 miscompiles this loop for two-subset modes */
-#pragma loop(no_vector)
-#endif
     for (i = 0; i < 16; i++) {
         s = bc7_get_subset(info->ns, partition, i) << 1;
         ib = info->ib;
@@ -505,6 +506,10 @@ decode_bc7_block(rgba *col, const UINT8 *src) {
 #undef ROTATE
     }
 }
+#ifdef BC7_NO_OPTIMIZE
+#pragma optimize("", on)
+#undef BC7_NO_OPTIMIZE
+#endif
 
 /* BC6 */
 typedef struct {
